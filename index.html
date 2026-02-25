@@ -21,7 +21,6 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .video-card { transition: all 0.5s ease; opacity: 0.15; transform: scale(0.85); }
         .video-card.active { opacity: 1; transform: scale(1.1); z-index: 10; }
-        /* 修改点1：滚动速度变慢（8s） */
         .writing-scroll-img { transition: transform 8s linear; }
         .writing-card:hover .writing-scroll-img { transform: translateY(calc(-100% + 20rem)); }
         .zoom-img-container { cursor: grab; transition: transform 0.1s ease-out; }
@@ -51,13 +50,12 @@
                 '视觉设计': [
                     { t: '2024文创周边', d: '结合园区元素及谐音梗，设计深受员工喜爱的系列周边。', tags: ['周边', '品牌'], c: 'rose', imgs: ['wenchuang1.png', 'wenchuang2.png', 'wenchuang3.png'] },
                     { t: 'TCL通讯表彰视觉', d: '以海报为载体传递文化，实现员工精神表彰。', tags: ['表彰', '视觉'], c: 'orange', imgs: ['biaozhang1.jpg', 'biaozhang2.png'] },
-                    { t: '活动主KV设计', d: '统筹年会、周年庆等大型活动全套舞台视觉设计。', tags: ['KV', '创意'], c: 'amber', imgs: ['kv1.jpg', 'kv2.jpg', 'kv3.png'] }, // 修改点3：kv3.png
+                    { t: '活动主KV设计', d: '统筹年会、周年庆等大型活动全套舞台视觉设计。', tags: ['KV', '创意'], c: 'amber', imgs: ['kv1.jpg', 'kv2.jpg', 'kv3.png'] },
                     { t: '校招生个训视觉', d: '从创意到落地，为校招生打造沉浸式成长办公空间。', tags: ['空间', '成长'], c: 'pink', imgs: ['gexun1.png', 'gexun2.png', 'gexun3.png', 'gexun4.jpg'] }
                 ],
                 '视频创作': [
-                    // 修改点4：视频封面更新
                     { t: 'TCL全球周年庆视频', imgs: ['xuanchuan.png'] },
-                    { t: '创意内购营销视频', imgs: ['neigou.png'] },
+                    { t: '创意内购营销视频', imgs: ['daihou.png'] }, // 此处已更正为 daihou.png
                     { t: '管理层团建视频', imgs: ['tuanjian.png'] },
                     { t: '年度总结视频', imgs: ['zongjie.png'] }
                 ],
@@ -192,7 +190,6 @@
 
                     {sel && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xl animate-in fade-in duration-300" onClick={() => setSel(null)}>
-                            {/* 修改点2：弹窗宽度缩小 15% (max-w-3xl) */}
                             <div className="bg-white w-full max-w-3xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col modal-enter relative" onClick={e => e.stopPropagation()} style={{ maxHeight: '92vh' }}>
                                 <div className="w-full overflow-y-auto no-scrollbar p-6 md:p-10">
                                     <div className="mb-8">
