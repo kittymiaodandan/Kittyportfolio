@@ -16,9 +16,15 @@
         @keyframes float { 0% { transform: translate(-10%, -10%); } 100% { transform: translate(30%, 30%); } }
         .card-pop { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; }
         .card-pop:hover { transform: translateY(-10px); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
         .modal-enter { animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes modalIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .video-card { transition: all 0.5s ease; opacity: 0.15; transform: scale(0.85); }
+        .video-card.active { opacity: 1; transform: scale(1.1); z-index: 10; }
+        .writing-scroll-img { transition: transform 3.5s ease-in-out; }
+        .writing-card:hover .writing-scroll-img { transform: translateY(calc(-100% + 20rem)); }
+        .zoom-img-container { cursor: grab; transition: transform 0.1s ease-out; }
+        .zoom-img-container:active { cursor: grabbing; }
     </style>
 </head>
 <body class="overflow-x-hidden text-slate-800">
@@ -27,66 +33,96 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
-        const IMGS = {
-            avatar: "in.jpg",
-            visual: {
-                wenchuang: ["wenchuang1.png", "wenchuang2.png", "wenchuang3.png"],
-                biaozhang: ["biaozhang1.jpg", "biaozhang2.png"],
-                kv: ["kv1.jpg", "kv2.jpg", "kv3.jpg"],
-                gexun: ["gexun1.png", "gexun2.png", "gexun3.png", "gexun4.jpg"]
-            }
-        };
-
-        const Icon = ({ n, c }) => { 
-            useEffect(() => window.lucide?.createIcons(), [n, c]); 
-            return <i data-lucide={n} className={c}></i>; 
-        };
+        const Icon = ({ n, c }) => { useEffect(() => window.lucide?.createIcons(), [n, c]); return <i data-lucide={n} className={c}></i>; };
 
         const App = () => {
             const [cat, setCat] = useState('视觉设计');
             const [sel, setSel] = useState(null);
             const [zoom, setZoom] = useState(null);
+            const [zScale, setZScale] = useState(1);
+            const [zPos, setZPos] = useState({ x: 0, y: 0 });
+            const [foc, setFoc] = useState(0);
+            const isDragging = useRef(false);
+            const lastPos = useRef({ x: 0, y: 0 });
 
             const baseData = {
                 '视觉设计': [
-                    { t: '2024文创周边', d: '结合园区元素及谐音梗，设计深受员工喜爱的系列周边。', tags: ['周边设计', '品牌力'], c: 'rose', imgs: IMGS.visual.wenchuang },
-                    { t: 'TCL通讯表彰视觉', d: '以海报为载体传递文化，实现员工非物质激励与精神表彰。', tags: ['表彰设计', '精神激励'], c: 'orange', imgs: IMGS.visual.biaozhang },
-                    { t: '活动主KV设计', d: '策划并执行公司年会、周年庆等大型活动全套舞台与美宣视觉。', tags: ['活动视觉', '创意'], c: 'amber', imgs: IMGS.visual.kv },
-                    { t: '校招生个训视觉设计', d: '从创意构思到落地执行，利用视觉语言打造具生命力的成长空间。', tags: ['空间视觉', '品牌成长'], c: 'pink', imgs: IMGS.visual.gexun }
+                    { t: '2024文创周边', d: '结合园区元素及谐音梗，设计深受员工喜爱的系列周边。', tags: ['周边', '品牌'], c: 'rose', imgs: ['wenchuang1.png', 'wenchuang2.png', 'wenchuang3.png'], grid: true, hide: true },
+                    { t: 'TCL通讯表彰视觉', d: '以海报为载体传递文化，实现员工精神表彰。', tags: ['表彰', '视觉'], c: 'orange', imgs: ['biaozhang1.jpg', 'biaozhang2.png'], grid: true, hide: true },
+                    { t: '活动主KV设计', d: '统筹年会、周年庆等大型活动全套舞台视觉设计。', tags: ['KV', '创意'], c: 'amber', imgs: ['kv1.jpg', 'kv2.jpg', 'kv3.jpg'], grid: true, hide: true },
+                    { t: '校招生个训视觉', d: '从创意到落地，为校招生打造沉浸式成长办公空间。', tags: ['空间', '成长'], c: 'pink', imgs: ['gexun1.png', 'gexun2.png', 'gexun3.png', 'gexun4.jpg'], grid: true, hide: true }
                 ],
                 '视频创作': [
-                    { t: '管理层团建视频', d: '强化企业核心价值观，引发广泛共鸣。', tags: ['团建', '后期'], c: 'violet', imgs: ["https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800"] },
-                    { t: '年度总结视频', d: '通过视频形式回顾年度大事记。', tags: ['总结', '剪辑'], c: 'fuchsia', imgs: ["https://images.unsplash.com/photo-1492691523567-61723c275df8?auto=format&fit=crop&w=800"] }
+                    { t: 'TCL全球周年庆视频', imgs: ['nianhui1.jpg'] }, // 暂用年会图占位，可自行修改
+                    { t: '创意内购营销视频', imgs: ['quwei.jpg'] },
+                    { t: '管理层团建视频', imgs: ['nianhui2.jpg'] },
+                    { t: '年度总结视频', imgs: ['nianhui4.jpg'] }
                 ],
                 '文案写作': [
-                    { t: '人物采访', d: '深度内宣专题稿件。', tags: ['采访', '写作'], c: 'emerald', imgs: ["https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=800"] }
+                    { t: '深度内宣专题', imgs: ['wenzhang1.jpg'] },
+                    { t: '人物故事报道', imgs: ['wenzhang2.jpg'] },
+                    { t: '海外传播方案', imgs: ['wenzhang3.jpg'] },
+                    { t: '管理办法规范', imgs: ['wenzhang4.jpg'] }
                 ],
                 '活动策划': [
-                    { t: '大型活动策划', d: '承办全球联动文化活动。', tags: ['策划', '执行'], c: 'blue', imgs: ["https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=800"] }
+                    { t: '节日活动', d: '策划并执行公司各类节日主题活动，营造温馨活跃的职场氛围。', tags: ['节日', '关怀'], c: 'rose', imgs: ['38.png', '381.png', '382.jpg'], grid: true },
+                    { t: '科技开放日', d: '策划并执行企业科技开放日，展示实力的同时促进交流。', tags: ['科技', '品牌'], c: 'orange', imgs: ['ertong.png'], grid: true },
+                    { t: '年会', d: '负责年会全流程策划，统筹创意落地，打造年度品牌盛典。', tags: ['统筹', '盛典'], c: 'indigo', imgs: ['nianhui2.jpg', 'nianhui1.jpg', 'nianhui4.jpg'], grid: true },
+                    { t: '趣味运动会', d: '策划并执行全员趣味运动会，在竞技中提升团队凝聚力。', tags: ['活力', '竞技'], c: 'emerald', imgs: ['quwei.jpg', 'quwei.jpg'], grid: true }
                 ]
             };
 
-            const cats = [
-                {id:'视觉设计', i:'palette', cl:'rose'}, 
-                {id:'视频创作', i:'clapperboard', cl:'violet'}, 
-                {id:'文案写作', i:'sparkles', cl:'emerald'}, 
-                {id:'活动策划', i:'party-popper', cl:'orange'}
-            ];
+            const handleWheel = (e) => {
+                if (!zoom) return;
+                const delta = e.deltaY > 0 ? -0.2 : 0.2;
+                setZScale(prev => Math.min(Math.max(prev + delta, 0.5), 5));
+            };
+
+            const handleMouseDown = (e) => {
+                isDragging.current = true;
+                lastPos.current = { x: e.clientX, y: e.clientY };
+            };
+
+            const handleMouseMove = (e) => {
+                if (!isDragging.current) return;
+                const dx = e.clientX - lastPos.current.x;
+                const dy = e.clientY - lastPos.current.y;
+                setZPos(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+                lastPos.current = { x: e.clientX, y: e.clientY };
+            };
+
+            const closeZoom = () => { setZoom(null); setZScale(1); setZPos({x:0, y:0}); };
+
+            const handleInfScroll = (e) => {
+                const itemH = 224;
+                const { scrollTop } = e.target;
+                const singleSetH = itemH * baseData['视频创作'].length;
+                if (scrollTop < itemH * 0.2) e.target.scrollTop = singleSetH + scrollTop;
+                else if (scrollTop >= singleSetH * 2 - itemH * 0.2) e.target.scrollTop = scrollTop - singleSetH;
+                setFoc(Math.round((e.target.scrollTop % singleSetH) / itemH) % baseData['视频创作'].length);
+            };
+
+            const cats = [{id:'视觉设计', i:'palette', cl:'rose'}, {id:'视频创作', i:'clapperboard', cl:'violet'}, {id:'文案写作', i:'sparkles', cl:'emerald'}, {id:'活动策划', i:'party-popper', cl:'orange'}];
 
             return (
-                <div className="min-h-screen flex flex-col p-4 md:p-10">
-                    <header className="max-w-6xl mx-auto w-full bg-white/75 backdrop-blur-xl rounded-[40px] shadow-2xl border border-white mb-16 p-8 md:p-14 flex flex-col md:flex-row items-center gap-12 text-center md:text-left">
+                <div className="min-h-screen flex flex-col p-4 md:p-10 text-slate-800" onMouseMove={handleMouseMove} onMouseUp={() => isDragging.current = false}>
+                    <header className="max-w-6xl mx-auto w-full bg-white/75 backdrop-blur-xl rounded-[40px] shadow-2xl border border-white mb-16 p-8 md:p-14 flex flex-col md:flex-row items-center gap-12">
                         <div className="w-48 h-48 md:w-60 md:h-60 rounded-full p-1.5 bg-gradient-to-tr from-rose-300 via-orange-200 to-indigo-300 shadow-xl overflow-hidden shrink-0">
-                            <img src={IMGS.avatar} className="w-full h-full rounded-full object-cover scale-110" onError={(e)=>{e.target.src="https://ui-avatars.com/api/?name=KITTY+MIAO&background=fda4af&color=fff&size=512"}} />
+                            <img src="in.jpg" className="w-full h-full rounded-full object-cover scale-110" />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 text-center md:text-left">
                             <h1 className="text-5xl md:text-6xl font-bold mb-3">缪丹丹 <span className="text-2xl text-rose-400 tracking-widest uppercase ml-2">Kitty Miao</span></h1>
                             <p className="text-xl md:text-2xl font-semibold bg-gradient-to-r from-rose-500 to-indigo-600 bg-clip-text text-transparent mb-8">企业文化 | 活动主持 | 培训</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-slate-600 text-sm font-medium">
-                                {[['graduation-cap','英国威斯敏斯特大学 硕士','indigo'],['phone','136-3122-7629','rose'],['map-pin','TCL / 海普瑞药业','orange'],['mail','1240878442@qq.com','emerald']].map(([i, t, l]) => (
-                                    <div key={t} className="flex items-center gap-3 bg-white/40 p-2.5 rounded-2xl border border-white shadow-sm">
+                                {[
+                                    ['graduation-cap','英国威斯敏斯特大学 硕士','indigo'],
+                                    ['phone','136-3122-7629','rose'],
+                                    ['map-pin','TCL / 海普瑞药业','orange'],
+                                    ['mail','1240878442@qq.com','emerald']
+                                ].map(([i, t, l]) => (
+                                    <div key={t} className="flex items-center gap-3 bg-white/40 p-2.5 rounded-2xl border border-white shadow-sm hover:bg-white transition-colors">
                                         <div className={`w-9 h-9 rounded-xl bg-${l}-50 flex items-center justify-center text-${l}-500`}><Icon n={i} c="w-4 h-4"/></div>
                                         <span>{t}</span>
                                     </div>
@@ -99,33 +135,65 @@
                         <div className="flex flex-wrap justify-center gap-4 mb-14">
                             {cats.map(c => (
                                 <button key={c.id} onMouseEnter={()=>setCat(c.id)} className={`flex items-center gap-3 px-8 py-4 rounded-full font-bold transition-all duration-500 ${cat === c.id ? `bg-${c.cl}-500 text-white shadow-xl scale-110` : `bg-white text-slate-400 hover:text-${c.cl}-500`}`}>
-                                    <Icon n={c.i} c="w-6 h-6"/>{c.id}
+                                    <Icon n={c.i} c={`w-6 h-6 ${cat===c.id?'animate-pulse':''}`}/>{c.id}
                                 </button>
                             ))}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {baseData[cat].map((p, i) => (
-                                <div key={i} onClick={()=>setSel(p)} className="card-pop bg-white rounded-[35px] p-3 shadow-xl border border-slate-50 flex flex-col group overflow-hidden">
-                                    <div className="w-full h-44 rounded-[30px] overflow-hidden bg-slate-50">
-                                        <img src={p.imgs[0]} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                        {cat === '视频创作' ? (
+                            <div className="relative max-w-4xl mx-auto h-[500px] overflow-y-auto no-scrollbar pt-12 pb-80" onScroll={handleInfScroll} style={{scrollSnapType:'y mandatory'}}>
+                                {[...baseData['视频创作'], ...baseData['视频创作'], ...baseData['视频创作']].map((p, i) => {
+                                    const isFocused = (i % baseData['视频创作'].length) === foc;
+                                    return (
+                                        <div key={i} className={`flex items-center justify-between mb-24 h-32 video-card ${isFocused ? 'active' : ''}`} style={{scrollSnapAlign:'start'}}>
+                                            <div className="w-[42%] text-right pr-8"><h3 className={`text-xl font-black transition-colors duration-300 ${isFocused ? 'text-violet-600' : 'text-slate-200'}`}>{p.t}</h3></div>
+                                            <div className={`w-4 h-4 rounded-full border-4 border-white transition-all duration-500 ${isFocused ? 'bg-violet-500 scale-150 shadow-lg' : 'bg-slate-200'}`}></div>
+                                            <div className="w-[42%] pl-8">
+                                                <div onClick={()=>setZoom(p.imgs[0])} className={`aspect-video rounded-2xl overflow-hidden shadow-2xl border-2 transition-all cursor-zoom-in relative group ${isFocused ? 'border-violet-200 shadow-violet-100' : 'border-transparent'}`}>
+                                                    <img src={p.imgs[0]} className="w-full h-full object-cover"/>
+                                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Icon n="play" c="w-10 h-10 text-white fill-current"/></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : cat === '文案写作' ? (
+                            <div className="columns-1 md:columns-2 gap-8 space-y-8 max-w-4xl mx-auto">
+                                {baseData['文案写作'].map((p, i) => (
+                                    <div key={i} className={`writing-card group relative break-inside-avoid bg-white rounded-[28px] overflow-hidden shadow-lg border border-slate-100 transition-all ${i%2!==0?'md:mt-12':''}`}>
+                                        <div className="h-80 w-full overflow-hidden relative">
+                                            <img src={p.imgs[0]} className="writing-scroll-img w-full absolute top-0 left-0" style={{ minHeight: '220%' }} />
+                                            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        </div>
+                                        <div className="p-4 bg-white border-t border-slate-50 relative z-10">
+                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Case Study {i+1}</p>
+                                        </div>
                                     </div>
-                                    <div className="p-6">
-                                        <div className="flex gap-2 mb-2">{p.tags?.map(t=><span key={t} className="text-[10px] px-2.5 py-1 bg-slate-50 text-slate-400 rounded-full font-black uppercase">#{t}</span>)}</div>
-                                        <h3 className="text-xl font-bold group-hover:text-rose-500 transition-colors">{p.t}</h3>
-                                        <p className="text-slate-500 text-sm mt-2 line-clamp-2 italic">{p.d}</p>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in duration-700">
+                                {baseData[cat].map((p, i) => (
+                                    <div key={i} onClick={()=>setSel(p)} className="card-pop bg-white rounded-[35px] p-3 shadow-xl border border-slate-50 flex flex-col group overflow-hidden text-slate-800">
+                                        <div className={`w-full h-44 rounded-[30px] overflow-hidden`}><img src={p.imgs[0]} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" /></div>
+                                        <div className="p-6">
+                                            <div className="flex gap-2 mb-2">{p.tags.map(t=><span key={t} className="text-[10px] px-2.5 py-1 bg-slate-50 text-slate-400 rounded-full font-black uppercase">#{t}</span>)}</div>
+                                            <h3 className="text-xl font-bold group-hover:text-rose-500 transition-colors">{p.t}</h3>
+                                            <p className="text-slate-500 text-sm mt-2 line-clamp-2 italic">{p.d}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </main>
 
                     {sel && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xl animate-in fade-in duration-300" onClick={() => setSel(null)}>
-                            <div className="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col modal-enter relative" onClick={e => e.stopPropagation()} style={{ maxHeight: '92vh' }}>
-                                <div className="w-full overflow-y-auto no-scrollbar p-6 md:p-10">
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xl animate-in fade-in duration-300">
+                            <div className="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col modal-enter relative">
+                                <div className="w-full overflow-y-auto no-scrollbar p-6 md:p-10" style={{ maxHeight: '92vh' }}>
                                     <div className="mb-8">
-                                        <div className="flex gap-2 mb-3">{sel.tags?.map(t=><span key={t} className="text-[10px] px-3 py-1 bg-rose-50 text-rose-500 rounded-full font-black uppercase">#{t}</span>)}</div>
+                                        <div className="flex gap-2 mb-3">{sel.tags?.map(t=><span key={t} className="text-[10px] px-3 py-1 bg-rose-50 text-rose-500 rounded-full font-black uppercase tracking-tight">#{t}</span>)}</div>
                                         <h3 className="text-3xl font-bold mb-4">{sel.t}</h3>
                                         <p className="text-slate-600 font-medium leading-relaxed">{sel.d}</p>
                                     </div>
@@ -143,11 +211,28 @@
                     )}
 
                     {zoom && (
-                        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4" onClick={()=>setZoom(null)}>
-                            <img src={zoom} className="max-w-full max-h-full rounded-lg shadow-2xl" />
-                            <button className="absolute top-8 right-8 text-white/50"><Icon n="x" c="w-10 h-10"/></button>
+                        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 overflow-hidden" onWheel={handleWheel} onMouseDown={handleMouseDown}>
+                            <div className="absolute top-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-white/10 rounded-full text-white/50 text-[10px] font-bold uppercase tracking-widest pointer-events-none flex items-center gap-4">
+                                <span className="flex items-center gap-1.5"><Icon n="mouse-pointer-2" c="w-3 h-3"/> Scroll to Zoom</span>
+                                <span className="w-px h-3 bg-white/20"></span>
+                                <span className="flex items-center gap-1.5"><Icon n="move" c="w-3 h-3"/> Drag to Move</span>
+                            </div>
+                            <div 
+                                className="zoom-img-container" 
+                                style={{ transform: `translate(${zPos.x}px, ${zPos.y}px) scale(${zScale})` }}
+                            >
+                                <img src={zoom} className="max-w-full max-h-screen rounded-sm shadow-2xl pointer-events-none" />
+                            </div>
+                            <button onClick={closeZoom} className="absolute top-8 right-8 w-12 h-12 bg-white/10 rounded-full text-white flex items-center justify-center hover:bg-white/20 transition-all"><Icon n="x" c="w-6 h-6"/></button>
                         </div>
                     )}
+
+                    <footer className="max-w-6xl mx-auto w-full py-16 text-center">
+                        <div className="w-16 h-1 bg-gradient-to-r from-rose-200 to-indigo-200 mx-auto rounded-full mb-6"></div>
+                        <p className="text-slate-400 font-bold tracking-widest text-xs uppercase">
+                            © 2025 · 缪丹丹 KITTY MIAO · 企业文化与品牌视觉空间
+                        </p>
+                    </footer>
                 </div>
             );
         };
