@@ -46,8 +46,6 @@
             const [cat, setCat] = useState('视觉设计');
             const [sel, setSel] = useState(null);
             const [zoom, setZoom] = useState(null);
-            const [zScale, setZScale] = useState(1);
-            const [zPos, setZPos] = useState({ x: 0, y: 0 });
             const [foc, setFoc] = useState(0);
 
             const baseData = {
@@ -58,10 +56,10 @@
                     { t: '校招生个训视觉', d: '从创意到落地，为校招生打造沉浸式成长办公空间。', tags: ['空间', '成长'], imgs: ['gexun1.png', 'gexun2.png', 'gexun3.png', 'gexun4.jpg'] }
                 ],
                 '视频创作': [
-                    { t: 'TCL全球周年庆视频', imgs: ['xuanchuan.png'] },
-                    { t: '创意内购营销视频', imgs: ['daihuo.png'] }, // 此处已更正为 daihuo.png
-                    { t: '管理层团建视频', imgs: ['tuanjian.png'] },
-                    { t: '年度总结视频', imgs: ['zongjie.png'] }
+                    { t: 'TCL全球周年庆视频', imgs: ['xuanchuan.png'], v: 'https://share.plvideo.cn/front/video/view?vid=l0d09998826a7633454dd795b25e47ec_l', type: 'iframe' },
+                    { t: '创意内购营销视频', imgs: ['daihuo.png'], v: 'daihuo.mp4', type: 'local' },
+                    { t: '管理层团建视频', imgs: ['tuanjian.png'], v: 'tuanjian.mp4', type: 'local' },
+                    { t: '年度总结视频', imgs: ['zongjie.png'], v: 'zongjie.mp4', type: 'local' }
                 ],
                 '文案写作': [
                     { t: '深度内宣专题', imgs: ['wenzhang1.jpg'] },
@@ -76,8 +74,6 @@
                     { t: '趣味运动会', d: '在竞技中提升团队凝聚力。', tags: ['活力', '竞技'], imgs: ['quwei.jpg', 'quwei.jpg'] }
                 ]
             };
-
-            const closeZoom = useCallback(() => { setZoom(null); setZScale(1); setZPos({x:0, y:0}); }, []);
 
             const handleInfScroll = (e) => {
                 const itemH = 224;
@@ -131,8 +127,11 @@
                                             <div className="w-[42%] text-right pr-8"><h3 className={`text-xl font-black ${isFocused ? 'text-rose-600' : 'text-slate-200'}`}>{p.t}</h3></div>
                                             <div className={`w-4 h-4 rounded-full border-4 border-white ${isFocused ? 'bg-rose-500 scale-150' : 'bg-slate-200'}`}></div>
                                             <div className="w-[42%] pl-8">
-                                                <div onClick={()=>setZoom(p.imgs[0])} className="aspect-video rounded-2xl overflow-hidden shadow-2xl cursor-zoom-in relative">
+                                                <div onClick={()=>setZoom({type:p.type, url:p.v})} className="aspect-video rounded-2xl overflow-hidden shadow-2xl cursor-zoom-in relative group">
                                                     <img src={p.imgs[0]} className="w-full h-full object-cover" onError={handleImgError} />
+                                                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Icon n="play" c="w-12 h-12 text-white fill-current"/>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -142,7 +141,7 @@
                         ) : cat === '文案写作' ? (
                             <div className="columns-1 md:columns-2 gap-8 space-y-8 max-w-4xl mx-auto">
                                 {baseData['文案写作'].map((p, i) => (
-                                    <div key={i} onClick={()=>setZoom(p.imgs[0])} className="writing-card group relative break-inside-avoid bg-white rounded-[28px] overflow-hidden shadow-lg border border-slate-100 cursor-zoom-in">
+                                    <div key={i} onClick={()=>setZoom({type:'image', url:p.imgs[0]})} className="writing-card group relative break-inside-avoid bg-white rounded-[28px] overflow-hidden shadow-lg border border-slate-100 cursor-zoom-in">
                                         <div className="h-80 w-full overflow-hidden relative">
                                             <img src={p.imgs[0]} className="writing-scroll-img w-full absolute top-0 left-0" style={{ minHeight: '220%' }} onError={handleImgError} />
                                         </div>
@@ -151,14 +150,14 @@
                                 ))}
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in">
                                 {baseData[cat].map((p, i) => (
                                     <div key={i} onClick={()=>setSel(p)} className="card-pop bg-white rounded-[35px] p-3 shadow-xl border border-slate-50 flex flex-col group overflow-hidden">
                                         <div className="w-full h-44 rounded-[30px] overflow-hidden">
                                             <img src={p.imgs[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onError={handleImgError} />
                                         </div>
                                         <div className="p-6">
-                                            <h3 className="text-xl font-bold group-hover:text-rose-500">{p.t}</h3>
+                                            <h3 className="text-xl font-bold group-hover:text-rose-500 transition-colors">{p.t}</h3>
                                             <p className="text-slate-500 text-sm mt-2 line-clamp-2 italic">{p.d}</p>
                                         </div>
                                     </div>
@@ -172,10 +171,10 @@
                             <div className="bg-white w-full max-w-3xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col modal-enter relative" onClick={e => e.stopPropagation()} style={{ maxHeight: '92vh' }}>
                                 <div className="w-full overflow-y-auto no-scrollbar p-6 md:p-10">
                                     <h3 className="text-3xl font-bold mb-4">{sel.t}</h3>
-                                    <p className="text-slate-600 mb-8">{sel.d}</p>
+                                    <p className="text-slate-600 mb-8 leading-relaxed">{sel.d}</p>
                                     <div className="flex flex-col gap-6">
                                         {sel.imgs.map((m, idx) => (
-                                            <img key={idx} src={m} className="w-full rounded-[25px] shadow-md cursor-zoom-in" onClick={()=>setZoom(m)} onError={handleImgError} />
+                                            <img key={idx} src={m} className="w-full rounded-[25px] shadow-md cursor-zoom-in border border-slate-50" onClick={()=>setZoom({type:'image', url:m})} onError={handleImgError} />
                                         ))}
                                     </div>
                                 </div>
@@ -185,9 +184,26 @@
                     )}
 
                     {zoom && (
-                        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4" onClick={closeZoom}>
-                            <img src={zoom} className="max-w-full max-h-screen rounded-sm" style={{ transform: `scale(${zScale})` }} onClick={e => e.stopPropagation()} onError={handleImgError} />
-                            <button onClick={closeZoom} className="absolute top-8 right-8 w-12 h-12 bg-white/10 rounded-full text-white flex items-center justify-center"><Icon n="x" c="w-6 h-6"/></button>
+                        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 animate-in fade-in" onClick={() => setZoom(null)}>
+                            <div className="relative max-w-5xl w-full flex items-center justify-center" onClick={e => e.stopPropagation()}>
+                                {zoom.type === 'iframe' ? (
+                                    <div className="w-full aspect-video rounded-xl overflow-hidden bg-black shadow-2xl">
+                                        <iframe 
+                                            src={zoom.url} 
+                                            className="w-full h-full" 
+                                            frameBorder="0" 
+                                            allowFullScreen
+                                        ></iframe>
+                                    </div>
+                                ) : zoom.type === 'local' ? (
+                                    <video src={zoom.url} controls autoPlay className="w-full rounded-lg shadow-2xl max-h-[85vh]"></video>
+                                ) : (
+                                    <img src={zoom.url} className="max-w-full max-h-[90vh] rounded-sm object-contain" onError={handleImgError} />
+                                )}
+                                <button onClick={() => setZoom(null)} className="absolute -top-12 right-0 md:-right-12 w-10 h-10 bg-white/10 rounded-full text-white flex items-center justify-center hover:bg-white/20 transition-all">
+                                    <Icon n="x" c="w-6 h-6"/>
+                                </button>
+                            </div>
                         </div>
                     )}
 
