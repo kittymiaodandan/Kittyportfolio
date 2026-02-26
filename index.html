@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>缪丹丹 KITTY MIAO | 个人作品集</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #fffafa; scroll-behavior: smooth; margin: 0; }
+        .bg-blob { position: fixed; width: 600px; height: 600px; filter: blur(100px); border-radius: 50%; z-index: -1; animation: float 25s infinite alternate; }
+        @keyframes float { 0% { transform: translate(-10%, -10%); } 100% { transform: translate(30%, 30%); } }
+        .card-pop { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; }
+        .card-pop:hover { transform: translateY(-10px); }
+        .modal-enter { animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .video-card { transition: all 0.5s ease; opacity: 0.15; transform: scale(0.85); }
+        .video-card.active { opacity: 1; transform: scale(1.1); z-index: 10; }
+        .writing-scroll-img { transition: transform 8s linear; }
+        .writing-card:hover .writing-scroll-img { transform: translateY(calc(-100% + 20rem)); }
+    </style>
+</head>
+<body class="overflow-x-hidden text-slate-800">
+    <div class="bg-blob" style="top:-150px; left:-150px; background: rgba(255,192,203,0.25);"></div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+
+        const handleImgError = (e) => {
+            e.target.src = "https://via.placeholder.com/800x600?text=Image+Not+Found";
+            e.target.onerror = null; 
+        };
+
+        const Icon = ({ n, c }) => { 
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [n]);
+            return <i data-lucide={n} className={c}></i>;
+        };
+
+        const App = () => {
+            const [cat, setCat] = useState('视觉设计');
+            const [sel, setSel] = useState(null);
+            const [zoom, setZoom] = useState(null);
+            const [foc, setFoc] = useState(0);
+
+            const baseData = {
+                '视觉设计': [
+                    { t: '2024文创周边', d: '结合园区元素及谐音梗，设计深受员工喜爱的系列周边。', tags: ['周边', '品牌'], imgs: ['wenchuang1.png', 'wenchuang2.png', 'wenchuang3.png'] },
+                    { t: 'TCL通讯表彰视觉', d: '以海报为载体传递文化，实现员工精神表彰。', tags: ['表彰', '视觉'], imgs: ['biaozhang1.jpg', 'biaozhang2.png'] },
+                    { t: '活动主KV设计', d: '统筹年会、周年庆等大型活动全套舞台视觉设计。', tags: ['KV', '创意'], imgs: ['kv1.jpg', 'kv2.jpg', 'kv3.png'] },
+                    { t: '校招生个训视觉', d: '从创意到落地，为校招生打造沉浸式成长办公空间。', tags: ['空间', '成长'], imgs: ['gexun1.png', 'gexun2.png', 'gexun3.png', 'gexun4.jpg'] }
+                ],
+                '视频创作': [
+                    { t: 'TCL全球周年庆视频', imgs: ['xuanchuan.png'], v: 'https://share.plvideo.cn/front/video/view?vid=l0d099988213baefa2e13dc17a233f4c_l', type: 'iframe' },
+                    { t: '创意内购营销视频', imgs: ['daihuo.png'], v: 'https://share.plvideo.cn/front/video/view?vid=l0d09998820bc905ab712a3909a77eae_l', type: 'iframe' },
+                    { t: '管理层团建视频', imgs: ['tuanjian.png'], v: 'https://share.plvideo.cn/front/video/view?vid=l0d0999882cf62329981de435ecf6449_l', type: 'iframe' },
+                    { t: '年度总结视频', imgs: ['zongjie.png'], v: 'https://share.plvideo.cn/front/video/view?vid=l0d099988267b5876f4a8f87604f05ef_l', type: 'iframe' }
+                ],
+                '文案写作': [
+                    { t: '深度内宣专题', imgs: ['wenzhang1.jpg'] },
+                    { t: '人物故事报道', imgs: ['wenzhang2.jpg'] },
+                    { t: '海外传播方案', imgs: ['wenzhang3.jpg'] },
+                    { t: '管理办法规范', imgs: ['wenzhang4.jpg'] }
+                ],
+                '活动策划': [
+                    { t: '节日活动', d: '策划并执行公司各类节日主题活动。', tags: ['节日', '关怀'], imgs: ['38.png', '381.png', '382.jpg'] },
+                    { t: '科技开放日', d: '展示实力的同时促进交流。', tags: ['科技', '品牌'], imgs: ['ertong.png'] },
+                    { t: '年会', d: '负责年会全流程策划，统筹创意落地。', tags: ['统筹', '盛典'], imgs: ['nianhui2.jpg', 'nianhui1.jpg', 'nianhui4.jpg'] },
+                    { t: '趣味运动会', d: '在竞技中提升团队凝聚力。', tags: ['活力', '竞技'], imgs: ['quwei.jpg', 'quwei.jpg'] }
+                ]
+            };
+
+            const handleInfScroll = (e) => {
+                const itemH = 224;
+                const { scrollTop, target } = e;
+                const singleSetH = itemH * baseData['视频创作'].length;
+                if (scrollTop < itemH * 0.2) target.scrollTop = singleSetH + scrollTop;
+                else if (scrollTop >= singleSetH * 2 - itemH * 0.2) target.scrollTop = scrollTop - singleSetH;
+                setFoc(Math.round((target.scrollTop % singleSetH) / itemH) % baseData['视频创作'].length);
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col p-4 md:p-10 text-slate-800">
+                    <header className="max-w-6xl mx-auto w-full bg-white/75 backdrop-blur-xl rounded-[40px] shadow-2xl border border-white mb-16 p-8 md:p-14 flex flex-col md:flex-row items-center gap-12 text-center md:text-left">
+                        <div className="w-48 h-48 md:w-60 md:h-60 rounded-full p-1.5 bg-gradient-to-tr from-rose-300 to-indigo-300 shadow-xl overflow-hidden shrink-0 mx-auto md:mx-0">
+                            <img src="in.jpg" className="w-full h-full rounded-full object-cover scale-110" onError={handleImgError} />
+                        </div>
+                        <div className="flex-1">
+                            <h1 className="text-5xl md:text-6xl font-bold mb-3">缪丹丹 <span className="text-2xl text-rose-400 uppercase ml-2">Kitty Miao</span></h1>
+                            <p className="text-xl md:text-2xl font-semibold bg-gradient-to-r from-rose-500 to-indigo-600 bg-clip-text text-transparent mb-8">企业文化 | 活动主持 | 培训</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-slate-600 text-sm font-medium">
+                                {[
+                                    ['graduation-cap','英国威斯敏斯特大学 硕士','indigo'],
+                                    ['phone','136-3122-7629','rose'],
+                                    ['map-pin','TCL / 海普瑞药业','orange'],
+                                    ['mail','1240878442@qq.com','emerald']
+                                ].map(([i, t, l]) => (
+                                    <div key={t} className="flex items-center gap-3 bg-white/40 p-2.5 rounded-2xl border border-white shadow-sm hover:bg-white transition-colors">
+                                        <div className={`w-9 h-9 rounded-xl bg-${l}-50 flex items-center justify-center text-${l}-500`}><Icon n={i} c="w-4 h-4"/></div>
+                                        <span>{t}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-6xl mx-auto w-full flex-grow mb-10">
+                        <div className="flex flex-wrap justify-center gap-4 mb-14">
+                            {['视觉设计', '视频创作', '文案写作', '活动策划'].map(id => (
+                                <button key={id} onClick={()=>setCat(id)} className={`flex items-center gap-3 px-8 py-4 rounded-full font-bold transition-all duration-500 ${cat === id ? `bg-rose-500 text-white shadow-xl scale-110` : `bg-white text-slate-400 hover:text-rose-500`}`}>
+                                    {id}
+                                </button>
+                            ))}
+                        </div>
+
+                        {cat === '视频创作' ? (
+                            <div className="relative max-w-4xl mx-auto h-[500px] overflow-y-auto no-scrollbar pt-12 pb-80" onScroll={handleInfScroll} style={{scrollSnapType:'y mandatory'}}>
+                                {[...baseData['视频创作'], ...baseData['视频创作']].map((p, i) => {
+                                    const isFocused = (i % baseData['视频创作'].length) === foc;
+                                    return (
+                                        <div key={i} className={`flex items-center justify-between mb-24 h-32 video-card ${isFocused ? 'active' : ''}`} style={{scrollSnapAlign:'start'}}>
+                                            <div className="w-[42%] text-right pr-8"><h3 className={`text-xl font-black ${isFocused ? 'text-rose-600' : 'text-slate-200'}`}>{p.t}</h3></div>
+                                            <div className={`w-4 h-4 rounded-full border-4 border-white ${isFocused ? 'bg-rose-500 scale-150' : 'bg-slate-200'}`}></div>
+                                            <div className="w-[42%] pl-8">
+                                                <div onClick={()=>setZoom({type:p.type, url:p.v})} className="aspect-video rounded-2xl overflow-hidden shadow-2xl cursor-zoom-in relative group">
+                                                    <img src={p.imgs[0]} className="w-full h-full object-cover" onError={handleImgError} />
+                                                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Icon n="play" c="w-12 h-12 text-white fill-current"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : cat === '文案写作' ? (
+                            <div className="columns-1 md:columns-2 gap-8 space-y-8 max-w-4xl mx-auto">
+                                {baseData['文案写作'].map((p, i) => (
+                                    <div key={i} onClick={()=>setZoom({type:'image', url:p.imgs[0]})} className="writing-card group relative break-inside-avoid bg-white rounded-[28px] overflow-hidden shadow-lg border border-slate-100 cursor-zoom-in">
+                                        <div className="h-80 w-full overflow-hidden relative">
+                                            <img src={p.imgs[0]} className="writing-scroll-img w-full absolute top-0 left-0" style={{ minHeight: '220%' }} onError={handleImgError} />
+                                        </div>
+                                        <div className="p-4 bg-white flex justify-between items-center"><p className="text-xs font-bold text-slate-400">Article {i+1}</p></div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {baseData[cat].map((p, i) => (
+                                    <div key={i} onClick={()=>setSel(p)} className="card-pop bg-white rounded-[35px] p-3 shadow-xl border border-slate-50 flex flex-col group overflow-hidden">
+                                        <div className="w-full h-44 rounded-[30px] overflow-hidden">
+                                            <img src={p.imgs[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onError={handleImgError} />
+                                        </div>
+                                        <div className="p-6">
+                                            <h3 className="text-xl font-bold group-hover:text-rose-500 transition-colors">{p.t}</h3>
+                                            <p className="text-slate-500 text-sm mt-2 line-clamp-2 italic">{p.d}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </main>
+
+                    {sel && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xl animate-in fade-in" onClick={() => setSel(null)}>
+                            <div className="bg-white w-full max-w-3xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col modal-enter relative" onClick={e => e.stopPropagation()} style={{ maxHeight: '92vh' }}>
+                                <div className="w-full overflow-y-auto no-scrollbar p-6 md:p-10">
+                                    <h3 className="text-3xl font-bold mb-4">{sel.t}</h3>
+                                    <p className="text-slate-600 mb-8 leading-relaxed">{sel.d}</p>
+                                    <div className="flex flex-col gap-6">
+                                        {sel.imgs.map((m, idx) => (
+                                            <img key={idx} src={m} className="w-full rounded-[25px] shadow-md cursor-zoom-in border border-slate-50" onClick={()=>setZoom({type:'image', url:m})} onError={handleImgError} />
+                                        ))}
+                                    </div>
+                                </div>
+                                <button onClick={()=>setSel(null)} className="absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"><Icon n="x" c="w-5 h-5"/></button>
+                            </div>
+                        </div>
+                    )}
+
+                    {zoom && (
+                        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 animate-in fade-in" onClick={() => setZoom(null)}>
+                            <div className="relative max-w-5xl w-full flex items-center justify-center" onClick={e => e.stopPropagation()}>
+                                {zoom.type === 'iframe' ? (
+                                    <div className="w-full aspect-video rounded-xl overflow-hidden bg-black shadow-2xl">
+                                        <iframe src={zoom.url} className="w-full h-full" frameBorder="0" allowFullScreen></iframe>
+                                    </div>
+                                ) : zoom.type === 'local' ? (
+                                    <video src={zoom.url} controls autoPlay className="w-full rounded-lg shadow-2xl max-h-[85vh]"></video>
+                                ) : (
+                                    <img src={zoom.url} className="max-w-full max-h-[90vh] rounded-sm object-contain" onError={handleImgError} />
+                                )}
+                                <button onClick={() => setZoom(null)} className="absolute -top-12 right-0 md:-right-12 w-10 h-10 bg-white/10 rounded-full text-white flex items-center justify-center hover:bg-white/20 transition-all">
+                                    <Icon n="x" c="w-6 h-6"/>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <footer className="max-w-6xl mx-auto w-full py-16 text-center">
+                        <p className="text-slate-400 font-bold tracking-widest text-xs uppercase">© 2026 · 缪丹丹 KITTY MIAO</p>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
